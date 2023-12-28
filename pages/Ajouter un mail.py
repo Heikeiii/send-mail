@@ -3,7 +3,6 @@ import json
 import os
 from email import policy
 from email.parser import BytesParser
-from bs4 import BeautifulSoup
 
 # Charger les données JSON depuis le fichier
 def charger_donnees():
