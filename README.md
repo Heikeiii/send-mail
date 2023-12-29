@@ -14,6 +14,7 @@ git clone git@github.com:Heikeiii/send-mail.git
 MAIL="Adresse mail d'envoi"
 MDP="Mot de passe de l'adresse d'envoi"
 ```
+
 6. Créer un fichier `Dockerfile` et le mettre dans le dossier `app`
 
 ```
