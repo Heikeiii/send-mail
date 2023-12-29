@@ -33,7 +33,7 @@ def afficher_formulaire():
         smtp_port = 465  # Port standard pour le serveur SMTP avec SSL
 
         # Informations sur l'adresse e-mail
-        email_address = os.getenv("EMAIL")
+        email_address = os.getenv("MAIL")
 
         # Sélection du fichier HTML en fonction de la selectbox
         chemin = [message.get('path', '') for message in messages_disponibles if message['objet'] == choix][0]
@@ -59,14 +59,19 @@ def afficher_formulaire():
             context = ssl.create_default_context()
             server = smtplib.SMTP_SSL(smtp_address, smtp_port, context=context)
 
-            # Connexion au serveur avec le nom d'utilisateur et le mot de passe
-            server.login(email_address, os.getenv("MDP"))
+            password = os.getenv("MDP")
 
-            # Envoi de l'e-mail
-            server.sendmail(email_address, receiver, message.as_string())
+            if password is None:
+                print("La variable d'environnement 'MDP' n'est pas définie.")
+            # Gérer le cas où le mot de passe n'est pas défini
+            else:
+                server.login(email_address, password)
 
-            # Fermeture de la connexion
-            server.quit()
+                # Envoi de l'e-mail
+                server.sendmail(email_address, receiver, message.as_string())
+
+                # Fermeture de la connexion
+                server.quit()
         else:
             st.error('Le contenu du message sélectionné n\'est pas disponible.')
 
@@ -78,6 +83,5 @@ def charger_donnees():
     except (FileNotFoundError, json.decoder.JSONDecodeError):
         data = []
     return data
-
 
 afficher_formulaire()
