@@ -1,59 +1,68 @@
 
->Cher utilisateur bonjour, cette plateforme sert à envoyer des mails préenregistrés afin de simuler la réception de messages malveillants. 
+1. Installer Docker
+2. Créer un dossier `app` 
+3. Aller dans le dossier
+4. Cloner le repo git (celui-ci est sur mon github personnel, voir à le mettre dans gitlab)
 
-#### Les différentes pages :
+```
+git clone git@github.com:Heikeiii/send-mail.git
+```
 
-1. Accueil
+5. Créer un fichier `.env` contenant 2 variables
 
-La page d'accueil est là pour présenter les différentes fonctionnalités disponibles. (c'est un tuto quoi)
+```
+MAIL="Adresse mail d'envoi"
+MDP="Mot de passe de l'adresse d'envoi"
+```
+6. Créer un fichier `Dockerfile` et le mettre dans le dossier `app`
 
-2. Ajouter un mail 
+```
+# app/Dockerfile
 
-Cette page permet d'ajouter un mail d'exemple à envoyer (ex: un joli spam remonté par un client) au format .eml 
-Il suffit de déposer votre fichier eml, un id lui sera donné et le système récupère l'objet du message afin de pouvoir le sélectionner à l'envoi.
-Le système récupère le contenu html du message et le sauvegarde dans un fichier du type {nom}.html
-Les informations sont également stockées dans un fichier json dont on reparlera plus tard. 
+FROM python:3.9-slim
 
-Attention certains mails ne contenant pas de html ou encodé ne sont pas forcément pris en compte. 
+WORKDIR /app
 
-3. Envoyer un mail 
+# Installer les outils nécessaires, y compris OpenSSH
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    software-properties-common \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-Cette page permet d'envoyer des exemples de messages disponibles à un destinataire. 
-Il faut entrer l'adresse du destinataire. 
-Vous pouvez modifier le header FROM, par défaut les messages sont envoyés authentifiés depuis la boîte "support@secuserve.com" (voir à modifier si nécessaire)
-Puis appuyer sur "Soumettre" pour envoyer
+# Copier le contenu du dossier send-mail dans le dossier /app du conteneur
+COPY send-mail /app
 
-4. Supprimer un mail
+# Copier le fichier .env crée au préalable
+COPY .env /app
 
-Cette page permet de supprimer un exemple de mail s'il vous plait pas, il suffit de sélectionner son nom et de cliquer sur le bouton "Soumettre", cela supprimera le message au format html et également son enregistrement dans le fichier "messages.json"
+# Installer les dépendances Python
+RUN pip3 install -r /app/requirements.txt
 
-#### Le stockage des messages
+EXPOSE 8501
 
-Les informations de chaque message sont stockés dans un fichier "messages.json" à la racine du projet contenant 3 valeurs : 
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-1. ID
+# Lancer le fichier Accueil.py depuis le dossier /app/send-mail
+ENTRYPOINT ["streamlit", "run", "/app/Accueil.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
-Correspond à un identifiant unique du message
+```
 
-2. objet 
+7. Créer l'image docker
 
-L'objet récupéré dans le fichier eml du message qui sera affiché dans les selectbox et envoyé aux destinataires
+```
+ docker build -t streamlit .
+```
 
-3. path
+8. Lancer l'image docker
 
-Le chemin du fichier html avec le contenu du message. 
-Ce fichier est stocké dans un dossier "stockage_fichiers" avec un nom de type {id}.html
+```
+docker run -d -p 8501:8501 streamlit
+```
 
-#### Améliorations 
+9. Se rendre au lien suivant : 
 
-1. Meilleurs prise en compte des messages ou prise en compte de plus de message, non sensible à la casse. 
-
-2. Pouvoir envoyer des messages avec plusieurs configuration 
-    - Serveurs SMTP différents
-    - Authentifiés/Non authentifiés
-    - Avec/Sans SPF/DKIM/DMARC/BIMI
-    - Office 365 etc....
-
-3. Affichage des messages dans ajouter/supprimer un mail dans des petites cartes (comme dans la capture mais en beau)
-
-
+```
+http://{IP de la machine}:8501/
+```
